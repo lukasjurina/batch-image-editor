@@ -1,7 +1,63 @@
 import numpy as np
 import cv2
+from numba import njit
 
-class GlitchEngine:
+class SecurityEngine:
+    @staticmethod
+    @njit
+    def _sort_pixels(image_data, threshold):
+        rows, cols, ch = image_data.shape
+        for r in range(rows):
+            c = 0
+            while c < cols:
+                # Simple brightness: (R+G+B)/3
+                brightness = (int(image_data[r, c, 0]) + int(image_data[r, c, 1]) + int(image_data[r, c, 2])) // 3
+                if brightness > threshold:
+                    start = c
+                    while c < cols:
+                        brightness = (int(image_data[r, c, 0]) + int(image_data[r, c, 1]) + int(image_data[r, c, 2])) // 3
+                        if brightness <= threshold: break
+                        c += 1
+                    end = c
+                    
+                    if end - start > 1:
+                        segment = image_data[r, start:end]
+                        n = end - start
+                        for i in range(n):
+                            for j in range(0, n - i - 1):
+                                b1 = (int(segment[j, 0]) + int(segment[j, 1]) + int(segment[j, 2])) // 3
+                                b2 = (int(segment[j+1, 0]) + int(segment[j+1, 1]) + int(segment[j+1, 2])) // 3
+                                if b1 > b2:
+                                    for k in range(3):
+                                        tmp = segment[j, k]
+                                        segment[j, k] = segment[j+1, k]
+                                        segment[j+1, k] = tmp
+                else:
+                    c += 1
+        return image_data
+
+    def apply_pixel_sorting(self, image: np.ndarray, threshold: int) -> np.ndarray:
+        if threshold >= 255: return image
+        res = image.copy()
+        return self._sort_pixels(res, threshold)
+
+    def apply_bitcrush(self, image: np.ndarray, levels: int) -> np.ndarray:
+        if levels >= 255 or levels <= 0: return image
+        factor = 255 // levels
+        return (image // factor * factor).astype(np.uint8)
+
+    def apply_databending(self, image: np.ndarray, blocks: int, shift_max: int) -> np.ndarray:
+        if blocks <= 0 or shift_max <= 0: return image
+        rows, cols, _ = image.shape
+        res = image.copy()
+        for _ in range(blocks):
+            y = np.random.randint(0, rows)
+            h = np.random.randint(1, max(2, rows // 10))
+            shift = np.random.randint(-shift_max, shift_max + 1)
+            y_end = min(y + h, rows)
+            res[y:y_end, :] = np.roll(res[y:y_end, :], shift, axis=1)
+        return res
+
     def apply_sinusoidal_warp(self, image: np.ndarray, amplitude: int, frequency: float) -> np.ndarray:
         if amplitude == 0: return image
         rows, cols, ch = image.shape

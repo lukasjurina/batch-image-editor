@@ -5,22 +5,25 @@ from PyQt6.QtGui import QImage, QPixmap
 import cv2
 import numpy as np
 import os
-from src.engine import GlitchEngine
-from src.processor import BatchProcessor
+from engine import SecurityEngine
+from processor import BatchProcessor
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Glitch-O-Matic")
+        self.setWindowTitle("Secure Photo Editor")
         self.original_image = None
         self.proxy_image = None
-        self.engine = GlitchEngine()
-        self.processor = BatchProcessor(self.engine)
+        self.security_engine = SecurityEngine()
+        self.processor = BatchProcessor(self.security_engine)
         
         self.params = {
             'warp': {'amplitude': 0, 'frequency': 5.0},
             'rgb': {'r_offset': 0, 'b_offset': 0},
-            'scanlines': {'density': 2, 'opacity': 0.0}
+            'scanlines': {'density': 2, 'opacity': 0.0},
+            'pixel_sorting': {'threshold': 255},
+            'bitcrush': {'levels': 255},
+            'databending': {'blocks': 0, 'shift_max': 0}
         }
         
         self.init_ui()
@@ -50,6 +53,16 @@ class MainWindow(QMainWindow):
         
         # Scanlines Controls
         self.scan_opacity_slider = self.add_slider("Scanline Opacity (%)", 0, 100, 0, self.on_param_change)
+        
+        # Pixel Sorting
+        self.sort_thresh_slider = self.add_slider("Pixel Sort Threshold", 0, 255, 255, self.on_param_change)
+        
+        # Bitcrush
+        self.bitcrush_slider = self.add_slider("Bitcrush Levels", 1, 255, 255, self.on_param_change)
+        
+        # Databending
+        self.data_blocks_slider = self.add_slider("Data Blocks", 0, 50, 0, self.on_param_change)
+        self.data_shift_slider = self.add_slider("Data Shift Max", 0, 100, 0, self.on_param_change)
         
         self.btn_export = QPushButton("Export All (Batch)")
         self.btn_export.clicked.connect(self.export_batch)
@@ -82,6 +95,10 @@ class MainWindow(QMainWindow):
         self.params['rgb']['r_offset'] = self.r_offset_slider.value()
         self.params['rgb']['b_offset'] = self.b_offset_slider.value()
         self.params['scanlines']['opacity'] = self.scan_opacity_slider.value() / 100.0
+        self.params['pixel_sorting']['threshold'] = self.sort_thresh_slider.value()
+        self.params['bitcrush']['levels'] = self.bitcrush_slider.value()
+        self.params['databending']['blocks'] = self.data_blocks_slider.value()
+        self.params['databending']['shift_max'] = self.data_shift_slider.value()
         self.update_preview()
 
     def load_image(self):
@@ -102,9 +119,12 @@ class MainWindow(QMainWindow):
         if self.proxy_image is None: return
         
         processed = self.proxy_image.copy()
-        processed = self.engine.apply_sinusoidal_warp(processed, **self.params['warp'])
-        processed = self.engine.apply_rgb_split(processed, **self.params['rgb'])
-        processed = self.engine.apply_scanlines(processed, **self.params['scanlines'])
+        processed = self.security_engine.apply_sinusoidal_warp(processed, **self.params['warp'])
+        processed = self.security_engine.apply_rgb_split(processed, **self.params['rgb'])
+        processed = self.security_engine.apply_scanlines(processed, **self.params['scanlines'])
+        processed = self.security_engine.apply_pixel_sorting(processed, **self.params['pixel_sorting'])
+        processed = self.security_engine.apply_bitcrush(processed, **self.params['bitcrush'])
+        processed = self.security_engine.apply_databending(processed, **self.params['databending'])
         
         self.display_image(processed)
 
