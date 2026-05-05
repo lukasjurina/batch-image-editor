@@ -41,3 +41,17 @@ def test_databending_shape():
     result = engine.apply_databending(img, blocks=5, shift_max=10)
     assert result.shape == img.shape
     assert result.dtype == np.uint8
+
+def test_micro_jitter_shape():
+    engine = SecurityEngine()
+    img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+    result = engine.apply_micro_jitter(img, intensity=0.1)
+    assert result.shape == img.shape
+    assert result.dtype == np.uint8
+
+def test_luminance_mask_shape():
+    engine = SecurityEngine()
+    img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+    result = engine.apply_luminance_mask(img, intensity=0.1)
+    assert result.shape == img.shape
+    assert result.dtype == np.uint8

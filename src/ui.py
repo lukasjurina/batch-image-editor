@@ -24,7 +24,9 @@ class MainWindow(QMainWindow):
             'scanlines': {'density': 2, 'opacity': 0.0},
             'pixel_sorting': {'threshold': 255},
             'bitcrush': {'levels': 255},
-            'databending': {'blocks': 0, 'shift_max': 0}
+            'databending': {'blocks': 0, 'shift_max': 0},
+            'micro_jitter': {'intensity': 0.0},
+            'luminance_mask': {'intensity': 0.0}
         }
         
         self.init_ui()
@@ -75,6 +77,10 @@ class MainWindow(QMainWindow):
         self.data_blocks_slider = self.add_slider("Data Blocks", 0, 50, 0, self.on_param_change)
         self.data_shift_slider = self.add_slider("Data Shift Max", 0, 100, 0, self.on_param_change)
         
+        # Anti-OCR
+        self.jitter_slider = self.add_slider("Micro-Jitter Intensity (%)", 0, 100, 0, self.on_param_change)
+        self.lum_mask_slider = self.add_slider("Luminance Mask (%)", 0, 100, 0, self.on_param_change)
+        
         self.btn_export = QPushButton("Export All (Batch)")
         self.btn_export.clicked.connect(self.export_batch)
         self.controls_layout.addWidget(self.btn_export)
@@ -110,6 +116,8 @@ class MainWindow(QMainWindow):
         self.params['bitcrush']['levels'] = self.bitcrush_slider.value()
         self.params['databending']['blocks'] = self.data_blocks_slider.value()
         self.params['databending']['shift_max'] = self.data_shift_slider.value()
+        self.params['micro_jitter']['intensity'] = self.jitter_slider.value() / 500.0 # Max 20% jitter
+        self.params['luminance_mask']['intensity'] = self.lum_mask_slider.value() / 500.0 # Max 0.2 intensity
         self.update_preview()
 
     def load_images(self):
@@ -148,7 +156,9 @@ class MainWindow(QMainWindow):
             'scanlines': {'density': 2, 'opacity': 0.0},
             'pixel_sorting': {'threshold': 255},
             'bitcrush': {'levels': 255},
-            'databending': {'blocks': 0, 'shift_max': 0}
+            'databending': {'blocks': 0, 'shift_max': 0},
+            'micro_jitter': {'intensity': 0.0},
+            'luminance_mask': {'intensity': 0.0}
         }
         
         # Block signals to avoid multiple updates while resetting sliders
@@ -161,6 +171,8 @@ class MainWindow(QMainWindow):
         self.bitcrush_slider.blockSignals(True)
         self.data_blocks_slider.blockSignals(True)
         self.data_shift_slider.blockSignals(True)
+        self.jitter_slider.blockSignals(True)
+        self.lum_mask_slider.blockSignals(True)
         
         self.warp_amp_slider.setValue(0)
         self.warp_freq_slider.setValue(50)
@@ -171,6 +183,8 @@ class MainWindow(QMainWindow):
         self.bitcrush_slider.setValue(255)
         self.data_blocks_slider.setValue(0)
         self.data_shift_slider.setValue(0)
+        self.jitter_slider.setValue(0)
+        self.lum_mask_slider.setValue(0)
         
         self.warp_amp_slider.blockSignals(False)
         self.warp_freq_slider.blockSignals(False)
@@ -181,6 +195,8 @@ class MainWindow(QMainWindow):
         self.bitcrush_slider.blockSignals(False)
         self.data_blocks_slider.blockSignals(False)
         self.data_shift_slider.blockSignals(False)
+        self.jitter_slider.blockSignals(False)
+        self.lum_mask_slider.blockSignals(False)
         
         self.update_preview()
 
@@ -194,6 +210,8 @@ class MainWindow(QMainWindow):
         processed = self.security_engine.apply_pixel_sorting(processed, **self.params['pixel_sorting'])
         processed = self.security_engine.apply_bitcrush(processed, **self.params['bitcrush'])
         processed = self.security_engine.apply_databending(processed, **self.params['databending'])
+        processed = self.security_engine.apply_micro_jitter(processed, **self.params['micro_jitter'])
+        processed = self.security_engine.apply_luminance_mask(processed, **self.params['luminance_mask'])
         
         self.display_image(processed)
 

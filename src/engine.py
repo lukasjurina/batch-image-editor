@@ -88,3 +88,41 @@ class SecurityEngine:
         for i in range(0, rows, max(1, density)):
             res[i, :, :] *= (1 - opacity)
         return res.astype(np.uint8)
+
+    @staticmethod
+    @njit
+    def _micro_jitter(image_data, intensity):
+        rows, cols, ch = image_data.shape
+        res = image_data.copy()
+        for r in range(rows):
+            for c in range(cols):
+                if np.random.random() < intensity:
+                    dr = np.random.randint(-1, 2)
+                    dc = np.random.randint(-1, 2)
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < rows and 0 <= nc < cols:
+                        for k in range(ch):
+                            tmp = res[r, c, k]
+                            res[r, c, k] = res[nr, nc, k]
+                            res[nr, nc, k] = tmp
+        return res
+
+    def apply_micro_jitter(self, image: np.ndarray, intensity: float) -> np.ndarray:
+        if intensity <= 0: return image
+        return self._micro_jitter(image, intensity)
+
+    def apply_luminance_mask(self, image: np.ndarray, intensity: float) -> np.ndarray:
+        if intensity <= 0: return image
+        rows, cols, ch = image.shape
+        noise = (np.random.randn(rows, cols, ch) * intensity * 255).astype(np.float32)
+        
+        # Luminance vector for BGR: Y = 0.114*B + 0.587*G + 0.299*R
+        lum_vec = np.array([0.114, 0.587, 0.299], dtype=np.float32)
+        
+        # Project noise to be luminance-neutral
+        dot_products = np.sum(noise * lum_vec, axis=2, keepdims=True)
+        lum_vec_sq_norm = np.sum(lum_vec**2)
+        noise_projected = noise - (dot_products / lum_vec_sq_norm) * lum_vec
+        
+        res = image.astype(np.float32) + noise_projected
+        return np.clip(res, 0, 255).astype(np.uint8)

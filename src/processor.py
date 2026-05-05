@@ -26,6 +26,10 @@ class BatchProcessor:
                 img = self.security_engine.apply_bitcrush(img, **params['bitcrush'])
             if 'databending' in params:
                 img = self.security_engine.apply_databending(img, **params['databending'])
+            if 'micro_jitter' in params:
+                img = self.security_engine.apply_micro_jitter(img, **params['micro_jitter'])
+            if 'luminance_mask' in params:
+                img = self.security_engine.apply_luminance_mask(img, **params['luminance_mask'])
             
             name = os.path.basename(path)
             cv2.imwrite(os.path.join(output_dir, f"secure_{name}"), img)
