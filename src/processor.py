@@ -17,6 +17,14 @@ class BatchProcessor:
                 
             # Apply stack
             img = self.security_engine.apply_sinusoidal_warp(img, **params['warp'])
+            if 'rotation' in params:
+                img = self.security_engine.apply_rotation(img, **params['rotation'])
+            if 'zoom' in params:
+                img = self.security_engine.apply_zoom(img, **params['zoom'])
+            if 'perspective' in params:
+                img = self.security_engine.apply_perspective_warp(img, **params['perspective'])
+            if 'vignette' in params:
+                img = self.security_engine.apply_vignette(img, **params['vignette'])
             img = self.security_engine.apply_rgb_split(img, **params['rgb'])
             if 'scanlines' in params:
                 img = self.security_engine.apply_scanlines(img, **params['scanlines'])
@@ -30,6 +38,22 @@ class BatchProcessor:
                 img = self.security_engine.apply_micro_jitter(img, **params['micro_jitter'])
             if 'luminance_mask' in params:
                 img = self.security_engine.apply_luminance_mask(img, **params['luminance_mask'])
+            if 'checkerboard' in params:
+                img = self.security_engine.apply_checkerboard_mask(img, **params['checkerboard'])
+            if 'lines' in params:
+                img = self.security_engine.apply_line_interference(img, **params['lines'])
+            if 'elastic' in params:
+                img = self.security_engine.apply_elastic_distortion(img, **params['elastic'])
+            if 'color_noise' in params:
+                img = self.security_engine.apply_salt_and_pepper_color(img, **params['color_noise'])
+            if 'ghosting' in params:
+                img = self.security_engine.apply_ghosting(img, **params['ghosting'])
+            if 'halftone' in params:
+                img = self.security_engine.apply_halftone(img, **params['halftone'])
+            if 'glitch_smear' in params:
+                img = self.security_engine.apply_glitch_smear(img, **params['glitch_smear'])
+            if 'local_inversion' in params:
+                img = self.security_engine.apply_local_inversion(img, **params['local_inversion'])
             
             name = os.path.basename(path)
             cv2.imwrite(os.path.join(output_dir, f"secure_{name}"), img)
