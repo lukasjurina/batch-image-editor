@@ -56,4 +56,4 @@ class BatchProcessor:
                 img = self.security_engine.apply_local_inversion(img, **params['local_inversion'])
             
             name = os.path.basename(path)
-            cv2.imwrite(os.path.join(output_dir, f"secure_{name}"), img)
+            cv2.imwrite(os.path.join(output_dir, f"{name}"), img)
